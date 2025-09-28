@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ZEN — Rezervări (vector, fără imagini, fix vizibilitate)</title>
+  <style>
+    :root{
+      --panel:rgba(255,255,255,.06);--border:rgba(255,255,255,.12);--neon-green:#39ff14;--neon-purple:#b026ff;--text:#f1f5f9;--ink:#0b0b12;--bg-bright:1;
+      --shadow-green:0 0 6px #39ff14,0 0 12px #39ff14;--shadow-purple:0 0 6px #b026ff,0 0 12px #b026ff
+    }
+    *{box-sizing:border-box}
+    body{min-height:100vh;margin:0;background:radial-gradient(1000px 600px at 20% 0%,#1b1130 0%,#0a0a0f 50%,#05050a 100%);color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,Segoe UI,Roboto}
+    .content{position:relative;z-index:1}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    .row{display:grid;gap:12px}
+    .cols-4{grid-template-columns:2fr 1fr 1fr 1fr}
+    .input,.btn{background:rgba(0,0,0,.4);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:10px}
+    .btn{cursor:pointer;font-weight:800}
+    .btn-green{background:var(--neon-green);box-shadow:var(--shadow-green);color:var(--ink);border:0}
+    .btn-purple{background:var(--neon-purple);box-shadow:var(--shadow-purple);color:var(--ink);border:0}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--border);font-size:12px}
+    .legend{display:flex;align-items:center;gap:16px;opacity:.9}
+    .dot{display:inline-block;width:12px;height:12px;border-radius:999px}
+    .muted{opacity:.75}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px}
+
+    /* Map */
+    .map-wrap{position:relative;border:1px solid var(--border);border-radius:18px;overflow:hidden;background:#0f0f17;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+    .stageOuter{position:relative;height:min(70vh,720px);overflow:hidden;touch-action:none}
+    .stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale(1);transform-origin:center center;will-change:transform}
+    svg.bg{position:absolute;left:0;top:0;width:1600px;height:900px;filter:brightness(var(--bg-bright)) contrast(1.05) saturate(1.08);z-index:0;pointer-events:none}
+    .tablesLayer{position:absolute;left:0;top:0;width:1600px;height:900px;z-index:10;pointer-events:auto}
+
+    /* Tables */
+    .tableBtn{position:absolute;width:52px;height:52px;border-radius:999px;border:2px solid currentColor;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;pointer-events:auto;user-select:none;font-weight:900;font-size:16px;line-height:1;color:#fff;text-shadow:0 0 4px currentColor}
+    .free{color:var(--neon-green);box-shadow:var(--shadow-green)}
+    .busy{color:var(--neon-purple);box-shadow:var(--shadow-purple)}
+    .selected{outline:2px solid #fde047}
+
+    /* Modal */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:60}
+    .hidden{display:none}
+    .modal.hidden{display:none !important}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px;width:min(92vw,420px)}
+  .fxCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+  </style>
+</head>
+<body>
+  <canvas id="fx" class="fxCanvas"></canvas>
+  <div class="content">
+    <header class="container" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <h1 style="font-size:32px;font-weight:900"><span style="text-shadow:var(--shadow-green)">ZEN</span> <span style="color:var(--neon-purple);text-shadow:var(--shadow-purple)">Rezervări</span></h1>
+      <div class="toolbar" style="display:flex;gap:8px;flex-wrap:wrap">
+        <label class="chip"><input id="staffToggle" type="checkbox"/> Mod Staff</label>
+        <label class="chip"><input id="editToggle" type="checkbox"/> Edit Mode</label>
+        <button id="btnFullscreen" class="btn btn-green">Fullscreen</button>
+      </div>
+    </header>
+
+    <section class="container row cols-4">
+      <div>
+        <label class="muted" style="display:block;font-size:12px;margin-bottom:6px">Data</label>
+        <input id="dateInput" class="input" type="date"/>
+      </div>
+      <div>
+        <label class="muted" style="display:block;font-size:12px;margin-bottom:6px">Ora</label>
+        <input id="timeInput" class="input" type="time" step="900" value="20:00"/>
+      </div>
+      <div>
+        <label class="muted" style="display:block;font-size:12px;margin-bottom:6px">Luminozitate</label>
+        <input id="brightInput" class="input" type="range" min="40" max="120" value="100"/>
+      </div>
+      <div style="display:flex;gap:8px;align-items:end">
+        <button id="btnCheck" class="btn btn-green" style="width:100%">Verifică disponibilitatea</button>
+      </div>
+    </section>
+
+    <section class="container" style="margin-top:12px">
+      <div class="legend">
+        <span><i class="dot" style="background:var(--neon-green);box-shadow:var(--shadow-green)"></i> Disponibil</span>
+        <span><i class="dot" style="background:var(--neon-purple);box-shadow:var(--shadow-purple)"></i> Rezervat</span>
+        <span><i class="dot" style="background:#fde047;box-shadow:0 0 6px #fde047,0 0 10px #fde047"></i> Selectat</span>
+        <span id="wsChip" class="chip muted">Demo local</span>
+      </div>
+      <p id="msg" class="muted" style="margin-top:6px;font-size:12px"></p>
+    </section>
+
+    <section class="container" style="margin-top:16px">
+      <div class="map-wrap panel">
+        <div id="stageOuter" class="stageOuter">
+          <div id="stage" class="stage">
+            <!-- Vector background: SCENĂ + BAR (fără imagini) -->
+            <svg id="bg" class="bg" viewBox="0 0 1600 900" width="1600" height="900" aria-hidden="true"></svg>
+            <div id="tablesLayer" class="tablesLayer"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;padding:10px 4px 0">
+          <div class="muted">Zoom: rotiță • Pan: drag pe fundal • Edit Mode: drag mese</div>
+          <div style="display:flex;gap:8px">
+            <button id="btnFit" class="btn btn-purple">Încadrează</button>
+            <button id="btnReset" class="btn btn-purple">Reset</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="staffSection" class="container" style="margin-top:16px;display:none">
+      <div class="panel">
+        <h3 style="font-weight:800;margin-bottom:8px">Rezervări curente <span id="stamp"></span></h3>
+        <ul id="staffList" style="list-style:none;padding:0;margin:0;display:grid;gap:6px"></ul>
+      </div>
+    </section>
+
+    <section class="container" style="margin-top:16px">
+      <div class="panel" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="btnRefresh" class="btn btn-green">Refresh</button>
+        <button id="btnClear" class="btn btn-purple">Golire rezervări (demo)</button>
+        <button id="btnTests" class="btn">Run Self‑Tests</button>
+      </div>
+      <div id="testsPanel" class="panel" style="margin-top:12px;display:none">
+        <h3 style="font-weight:800;margin-bottom:8px">Self‑Tests</h3>
+        <ul id="testsList" style="list-style:none;padding:0;margin:0"></ul>
+      </div>
+    </section>
+
+    <div id="modal" class="modal hidden">
+      <div class="card" role="dialog" aria-modal="true">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <h3 id="modalTitle" style="font-size:20px;font-weight:900;text-shadow:var(--shadow-green)">Rezervă</h3>
+          <button id="modalClose" class="muted" style="background:transparent;border:0;font-size:18px">✕</button>
+        </div>
+        <p id="modalStamp" class="muted" style="margin-top:4px"></p>
+        <div class="row" style="gap:8px;margin-top:10px">
+          <input id="nameInput" class="input" placeholder="Nume complet" />
+          <input id="phoneInput" class="input" placeholder="Telefon" />
+          <input id="sizeInput" class="input" type="number" min="1" max="12" value="2" placeholder="Număr persoane" />
+          <button id="btnConfirm" class="btn btn-purple" style="width:100%">Confirmă rezervarea</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ====== Constants & Utils ======
+  const CANVAS_W=1600,CANVAS_H=900; const pad=n=>String(n).padStart(2,'0');
+  const isMobile = matchMedia('(pointer:coarse)').matches || innerWidth <= 900;
+  const STAGE={x:600,y:110,w:360,h:110};
+  const BAR  ={x:1080,y:200,w:420,h:260,cut:{x:1150,y:260,w:280,h:140}};
+  const clamp01=v=>Math.max(0,Math.min(100,v));
+  function tzParts(tz='Europe/Bucharest'){const p=new Intl.DateTimeFormat('en-GB',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(new Date()); const g=t=>Number(p.find(x=>x.type===t).value); return {yyyy:g('year'),mm:g('month'),dd:g('day'),hh:g('hour'),min:g('minute'),ss:g('second')};}
+  function ymd(o){return `${o.yyyy}-${pad(o.mm)}-${pad(o.dd)}`}
+  function addDaysUTC(y,m,d,k){const t=new Date(Date.UTC(y,m-1,d));t.setUTCDate(t.getUTCDate()+k);return {yyyy:t.getUTCFullYear(),mm:t.getUTCMonth()+1,dd:t.getUTCDate()}}
+  function resetAnchor(){const p=tzParts(); if(p.hh>=6) return ymd(p); const y=addDaysUTC(p.yyyy,p.mm,p.dd,-1); return ymd(y)}
+
+  // ====== Background (SVG) ======
+  const bg = document.getElementById('bg');
+  function drawBG(){
+    const NS='http://www.w3.org/2000/svg'; while(bg.firstChild) bg.removeChild(bg.firstChild);
+    const defs=document.createElementNS(NS,'defs');
+    const grad=document.createElementNS(NS,'linearGradient'); grad.setAttribute('id','g'); grad.setAttribute('x1','0'); grad.setAttribute('y1','0'); grad.setAttribute('x2','0'); grad.setAttribute('y2','1');
+    const s1=document.createElementNS(NS,'stop'); s1.setAttribute('offset','0'); s1.setAttribute('stop-color','#141420');
+    const s2=document.createElementNS(NS,'stop'); s2.setAttribute('offset','1'); s2.setAttribute('stop-color','#0b0b14');
+    grad.appendChild(s1); grad.appendChild(s2); defs.appendChild(grad);
+    bg.appendChild(defs);
+    const back=document.createElementNS(NS,'rect'); back.setAttribute('width','100%'); back.setAttribute('height','100%'); back.setAttribute('fill','url(#g)'); bg.appendChild(back);
+    const st=document.createElementNS(NS,'rect'); st.setAttribute('x',STAGE.x); st.setAttribute('y',STAGE.y); st.setAttribute('width',STAGE.w); st.setAttribute('height',STAGE.h); st.setAttribute('rx',12); st.setAttribute('fill','rgba(176,38,255,.12)'); st.setAttribute('stroke','#b026ff'); st.setAttribute('stroke-width',isMobile?3:6); bg.appendChild(st);
+    const stT=document.createElementNS(NS,'text'); stT.setAttribute('x', STAGE.x+STAGE.w/2); stT.setAttribute('y', STAGE.y+STAGE.h/2+10); stT.setAttribute('text-anchor','middle'); stT.setAttribute('font-size',isMobile?46:66); stT.setAttribute('font-weight','800'); stT.setAttribute('fill','#b026ff'); stT.textContent='SCENĂ'; bg.appendChild(stT);
+    const bar=document.createElementNS(NS,'rect'); bar.setAttribute('x',BAR.x); bar.setAttribute('y',BAR.y); bar.setAttribute('width',BAR.w); bar.setAttribute('height',BAR.h); bar.setAttribute('rx',18); bar.setAttribute('fill','rgba(176,38,255,.10)'); bar.setAttribute('stroke','#b026ff'); bar.setAttribute('stroke-width',isMobile?3:6); bg.appendChild(bar);
+    const hole=document.createElementNS(NS,'rect'); hole.setAttribute('x',BAR.cut.x); hole.setAttribute('y',BAR.cut.y); hole.setAttribute('width',BAR.cut.w); hole.setAttribute('height',BAR.cut.h); hole.setAttribute('fill','#0b0b14'); bg.appendChild(hole);
+    const barT=document.createElementNS(NS,'text'); barT.setAttribute('x', BAR.x+BAR.w-20); barT.setAttribute('y', BAR.y+50); barT.setAttribute('text-anchor','end'); barT.setAttribute('font-size',isMobile?40:56); barT.setAttribute('font-weight','800'); barT.setAttribute('fill','#b026ff'); barT.textContent='BAR'; bg.appendChild(barT);
+  }
+
+  // ====== Tables (18) ======
+  function noGoRects(){
+    const pct=(v,tot)=> (v/tot)*100; return [
+      {xPct:pct(STAGE.x,CANVAS_W),yPct:pct(STAGE.y,CANVAS_H),wPct:pct(STAGE.w,CANVAS_W),hPct:pct(STAGE.h,CANVAS_H)},
+      {xPct:pct(BAR.x,CANVAS_W),yPct:pct(BAR.y,CANVAS_H),wPct:pct(BAR.w,CANVAS_W),hPct:pct(BAR.h,CANVAS_H)}
+    ];
+  }
+  function inside(x,y,r){return x>=r.xPct&&x<=r.xPct+r.wPct&&y>=r.yPct&&y<=r.yPct+r.hPct}
+  function pushOut(x,y,rects){for(const r of rects){if(inside(x,y,r)){const dL=Math.abs(x-r.xPct), dR=Math.abs((r.xPct+r.wPct)-x), dT=Math.abs(y-r.yPct), dB=Math.abs((r.yPct+r.hPct)-y); const m=Math.min(dL,dR,dT,dB); if(m===dL) x=Math.max(0,r.xPct-1); else if(m===dR) x=Math.min(100,r.xPct+r.wPct+1); else if(m===dT) y=Math.max(0,r.yPct-1); else y=Math.min(100,r.yPct+r.hPct+1);} } return {x,y} }
+
+  const RAW_TABLES=[
+    {id:'T1',x:14,y:40},{id:'T2',x:26,y:40},{id:'T3',x:38,y:40},{id:'T4',x:50,y:40},{id:'T5',x:62,y:40},
+    {id:'T6',x:14,y:56},{id:'T7',x:30,y:56},{id:'T8',x:46,y:56},{id:'T9',x:62,y:56},{id:'T10',x:78,y:56},
+    {id:'T11',x:14,y:70},{id:'T12',x:30,y:70},{id:'T13',x:46,y:70},{id:'T14',x:62,y:70},{id:'T15',x:78,y:70},
+    {id:'T16',x:28,y:82},{id:'T17',x:50,y:82},{id:'T18',x:72,y:82},
+  ].map((t,i)=>{const p=pushOut(t.x,t.y,noGoRects());return {id:t.id,label:`Masa ${i+1}`,x:p.x,y:p.y}});
+
+  // ====== State ======
+  const state={ tables:RAW_TABLES.slice(), reserved:new Set(), details:new Map(), selected:null, date:ymd(tzParts()), time:'20:00', scale:1, tx:0, ty:0, edit:false, staff:false };
+
+  // ====== DOM ======
+  const stageOuter=document.getElementById('stageOuter');
+  const stage=document.getElementById('stage');
+  const layer=document.getElementById('tablesLayer');
+  const dateInput=document.getElementById('dateInput');
+  const timeInput=document.getElementById('timeInput');
+  const brightInput=document.getElementById('brightInput');
+  const staffSection=document.getElementById('staffSection');
+  const staffList=document.getElementById('staffList');
+  const stamp=document.getElementById('stamp');
+  const msg=document.getElementById('msg');
+
+  // ====== Render ======
+  function renderTables(){
+    layer.innerHTML='';
+    state.tables.forEach((t,idx)=>{
+      const btn=document.createElement('button');
+      const isBusy=state.reserved.has(t.id), isSel=state.selected===t.id;
+      btn.className=`tableBtn ${isBusy?'busy':'free'} ${isSel?'selected':''}`;
+      btn.style.left=t.x+'%'; btn.style.top=t.y+'%'; btn.style.transform='translate(-50%,-50%)'; btn.style.zIndex='20';
+      btn.textContent=String(idx+1);
+      btn.title=isBusy?'Rezervat':'Disponibil';
+      btn.addEventListener('click',e=>{e.stopPropagation(); state.selected=t.id; if(!isBusy && !state.edit) openModal();});
+      if(state.edit){ btn.addEventListener('pointerdown',e=>{ btn.setPointerCapture?.(e.pointerId); const move=ev=>{ const r=bg.getBoundingClientRect(); let x=((ev.clientX-r.left)/r.width)*100; let y=((ev.clientY-r.top)/r.height)*100; const p=pushOut(clamp01(Math.round(x)),clamp01(Math.round(y)),noGoRects()); t.x=p.x; t.y=p.y; renderTables(); }; const up=()=>{removeEventListener('pointermove',move); removeEventListener('pointerup',up);}; addEventListener('pointermove',move); addEventListener('pointerup',up); }); }
+      layer.appendChild(btn);
+    });
+  }
+  function renderTransform(){ stage.style.transform=`translate3d(calc(-50% + ${state.tx}px), calc(-50% + ${state.ty}px), 0) scale(${state.scale})`; }
+  function render(){ renderTables(); renderTransform(); }
+
+  // ====== Modal ======
+  const modal=document.getElementById('modal'); const modalTitle=document.getElementById('modalTitle'); const modalStamp=document.getElementById('modalStamp'); const nameInput=document.getElementById('nameInput'); const phoneInput=document.getElementById('phoneInput'); const sizeInput=document.getElementById('sizeInput');
+  function openModal(){ const t=state.tables.find(x=>x.id===state.selected); if(!t) return; modalTitle.textContent='Rezervă '+t.label; modalStamp.textContent=`${state.date} la ${state.time}`; nameInput.value=''; phoneInput.value=''; sizeInput.value='2'; modal.classList.remove('hidden'); }
+  function closeModal(){ modal.classList.add('hidden'); }
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  modal.addEventListener('click',e=>{ if(e.target===modal) closeModal(); });
+  document.getElementById('btnConfirm').addEventListener('click',()=>{
+    const t=state.tables.find(x=>x.id===state.selected); if(!t) return;
+    state.reserved.add(t.id);
+    state.details.set(t.id,{name:nameInput.value.trim()||'Rez#local',party:Math.max(1,Number(sizeInput.value)||2)});
+    closeModal();
+    render();
+    renderStaff(); // <-- actualizează lista staff instant
+    saveSlot();
+  });
+
+  // ====== Staff ======
+  function renderStaff(){ staffSection.style.display=state.staff?'':'none'; stamp&&(stamp.textContent=`la ${state.date} — ${state.time}`); staffList.innerHTML=''; state.tables.forEach(t=>{ const li=document.createElement('li'); li.style.display='flex'; li.style.alignItems='center'; li.style.justifyContent='space-between'; li.style.gap='8px'; const left=document.createElement('span'); left.className='muted'; left.textContent=t.label; const right=document.createElement('span'); const occ=state.reserved.has(t.id); right.textContent=occ?'ocupat':'liber'; right.style.fontSize='11px'; right.style.padding='3px 8px'; right.style.borderRadius='999px'; right.style.border='1px solid '+(occ?'#a855f7':'#34d399'); right.style.background=occ?'rgba(168,85,247,.18)':'rgba(52,211,153,.18)'; const act=document.createElement('div'); act.style.display='flex'; act.style.gap='6px'; if(occ){ const b=document.createElement('button'); b.className='btn'; b.textContent='Eliberează'; b.addEventListener('click',()=>{
+          state.reserved.delete(t.id);
+          state.details.delete(t.id);
+          render();
+          renderStaff(); // <-- reflectă imediat eliberarea în listă
+          saveSlot();
+        }); act.appendChild(b);} li.append(left); li.append(right); li.append(act); staffList.appendChild(li); }); }
+
+  // ====== Storage by slot (date+time), all free by default ======
+  const KEY='zen_demo_v4';
+  function kSlot(){return state.date+' '+state.time}
+  function loadSlot(){ try{const db=JSON.parse(localStorage.getItem(KEY)||'{}'); const slot=db[kSlot()]||{}; state.reserved=new Set(Object.keys(slot)); state.details=new Map(Object.entries(slot)); }catch{} }
+  function saveSlot(){ try{const db=JSON.parse(localStorage.getItem(KEY)||'{}'); const slot={}; state.details.forEach((v,k)=>{ slot[k]=v; }); db[kSlot()]=slot; localStorage.setItem(KEY,JSON.stringify(db)); }catch{} }
+
+  // ====== Pan & Zoom (optimized) ======
+  stageOuter.addEventListener('wheel',e=>{ e.preventDefault(); const dir=Math.sign(e.deltaY)*-0.1; state.scale=Math.max(.5,Math.min(3,state.scale+dir)); renderTransform(); }, {passive:false});
+  const pan={on:false,x:0,y:0,ticking:false};
+  stageOuter.addEventListener('pointerdown',e=>{ if(e.target.closest&&e.target.closest('.tableBtn')) return; pan.on=true; pan.x=e.clientX; pan.y=e.clientY; stageOuter.setPointerCapture?.(e.pointerId); });
+  stageOuter.addEventListener('pointermove',e=>{ if(!pan.on) return; const dx=e.clientX-pan.x, dy=e.clientY-pan.y; pan.x=e.clientX; pan.y=e.clientY; state.tx+=dx; state.ty+=dy; if(!pan.ticking){ pan.ticking=true; requestAnimationFrame(()=>{ renderTransform(); pan.ticking=false; }); } });
+  stageOuter.addEventListener('pointerup',()=>{ pan.on=false; });
+
+  // ====== Toolbar & Inputs ======
+  document.getElementById('btnFullscreen').addEventListener('click',()=>{ const n=document.documentElement; if(!document.fullscreenElement) n.requestFullscreen?.(); else document.exitFullscreen?.(); });
+  document.getElementById('btnFit').addEventListener('click',fitToView);
+  document.getElementById('btnReset').addEventListener('click',()=>{ state.scale=1; state.tx=0; state.ty=0; renderTransform(); });
+  document.getElementById('btnRefresh').addEventListener('click',()=>{ loadSlot(); render(); renderStaff(); });
+  document.getElementById('btnClear').addEventListener('click',()=>{ state.reserved=new Set(); state.details=new Map(); saveSlot(); render(); renderStaff(); });
+  document.getElementById('btnCheck').addEventListener('click',()=>{ loadSlot(); render(); renderStaff(); });
+  document.getElementById('staffToggle').addEventListener('change',e=>{ state.staff=e.target.checked; renderStaff(); });
+  document.getElementById('editToggle').addEventListener('change',e=>{ state.edit=e.target.checked; render(); });
+  brightInput.addEventListener('input',e=>{ document.documentElement.style.setProperty('--bg-bright', Number(e.target.value)/100 ); });
+  dateInput.addEventListener('change',e=>{ state.date=e.target.value; loadSlot(); render(); renderStaff(); });
+  timeInput.addEventListener('change',e=>{ state.time=e.target.value; loadSlot(); render(); renderStaff(); });
+
+  // ====== Utilities ======
+  function fitToView(){ const r=stageOuter.getBoundingClientRect(); const iw=CANVAS_W, ih=CANVAS_H; state.scale=Math.min(r.width/iw,r.height/ih)*0.95; state.tx=0; state.ty=0; renderTransform(); }
+  function dailyReset(){ const anchor=resetAnchor(); const K='zen_last_reset_anchor'; const prev=localStorage.getItem(K); if(prev!==anchor){ localStorage.setItem(K,anchor); localStorage.setItem(KEY,'{}'); msg.textContent='Reset zilnic 06:00 (București): toate mesele eliberate.'; } }
+  setInterval(dailyReset,60*1000);
+
+  // Live sync între tab-uri (public <-> staff) pe același browser
+  window.addEventListener('storage', (e)=>{
+    if(e.key === KEY){
+      loadSlot();
+      render();
+      renderStaff();
+    }
+  });
+
+  // ====== Self‑Tests ======
+  document.getElementById('btnTests').addEventListener('click',()=>{
+    const out=[]; const layerRect=layer.getBoundingClientRect();
+    out.push({name:'18 tables exist',pass:state.tables.length===18});
+    out.push({name:'overlay sized',pass:layerRect.width>0 && layerRect.height>0});
+    out.push({name:'buttons rendered',pass:layer.querySelectorAll('.tableBtn').length===18});
+    out.push({name:'modal hidden on load',pass:document.getElementById('modal').classList.contains('hidden')});
+    document.getElementById('testsList').innerHTML=out.map(r=>`<li style="display:flex;gap:8px;align-items:center"><span style="width:14px">${r.pass?'✅':'❌'}</span><span>${r.name}</span></li>`).join('');
+    document.getElementById('testsPanel').style.display='';
+  });
+
+  function startParticles(){
+    if(isMobile) return; // desktop only
+    const c=document.getElementById('fx'); if(!c) return; const ctx=c.getContext('2d');
+    const resize=()=>{ c.width=innerWidth; c.height=innerHeight; }; addEventListener('resize',resize); resize();
+    const N=60; const ps=Array.from({length:N},()=>({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,r:1+Math.random()*2,h:Math.random()<.5?130:285}));
+    (function tick(){ ctx.clearRect(0,0,c.width,c.height); for(const p of ps){ p.x+=p.vx; p.y+=p.vy; if(p.x<0||p.x>c.width) p.vx*=-1; if(p.y<0||p.y>c.height) p.vy*=-1; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); const col=`hsla(${p.h},100%,60%,.45)`; ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0; } requestAnimationFrame(tick); })();
+  }
+
+  // ====== Init ======
+  drawBG(); startParticles(); fitToView();
+  const today=ymd(tzParts()); document.getElementById('dateInput').value=today; state.date=today; loadSlot(); render();
+  </script>
+</body>
+</html>
