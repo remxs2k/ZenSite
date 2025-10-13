@@ -566,17 +566,31 @@ function GlobalStyles(){
       .scroll-progress>div{height:100%;background:linear-gradient(90deg,var(--p),var(--a),var(--s));box-shadow:0 0 12px rgba(124,58,237,.45)}
 
       /* ===== HERO (foto cocktail + overlay + glow) ===== */
-      .hero{position:relative;min-height:78vh;border-bottom:1px solid #1f2937;overflow:hidden;display:grid;place-items:center;text-align:center}
-      .hero::before{
-        content:""; position:absolute; inset:-20%;
-        background:
-          linear-gradient(180deg, rgba(7,8,12,.55), rgba(7,8,12,.85)),
-          url('/galerie/zen7.jpeg'),
-          radial-gradient(circle at 50% 20%, rgba(217,70,239,0.25), transparent 60%);
+      .hero {
+        position: relative;
+        min-height: 78vh;
+        overflow: hidden;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+          linear-gradient(180deg, rgba(7,8,12,0.55), rgba(7,8,12,0.85)),
+          url("/galerie/zen7.jpeg");
         background-size: cover;
         background-position: center;
-        z-index: -1;
+        background-repeat: no-repeat;
+        z-index: 0;
         filter: brightness(0.85) contrast(1.1);
+      }
+      
+      .hero-content {
+        position: relative;
+        z-index: 2;
       }
       .hero::after{
         content:""; position:absolute; inset:0;
