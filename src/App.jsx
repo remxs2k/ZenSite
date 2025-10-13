@@ -570,19 +570,13 @@ function GlobalStyles(){
       .hero::before{
         content:""; position:absolute; inset:-20%;
         background:
-          /* overlay pentru lizibilitate (reduce opacitatea vizuală a imaginii) */
           linear-gradient(180deg, rgba(7,8,12,.55), rgba(7,8,12,.85)),
-          /* FOTO COCKTAIL profesional (Unsplash) */
-          url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000&auto=format&fit=crop'),
-          /* glows neon mov/fuchsia */
-          radial-gradient(900px 500px at 20% 20%, rgba(217,70,239,.28), transparent 60%),
-          radial-gradient(900px 500px at 80% 30%, rgba(168,85,247,.24), transparent 60%),
-          radial-gradient(1200px 700px at 50% 85%, rgba(124,58,237,.18), transparent 60%),
-          linear-gradient(#07080c, #07080c);
-        background-size: cover, cover, auto, auto, auto, auto;
-        background-position: center, center, 20% 20%, 80% 30%, 50% 85%, center;
-        filter: saturate(1.05);
-        animation: floatBg 14s ease-in-out infinite alternate;
+          url('/galerie/zen7.jpeg'),
+          radial-gradient(circle at 50% 20%, rgba(217,70,239,0.25), transparent 60%);
+        background-size: cover;
+        background-position: center;
+        z-index: -1;
+        filter: brightness(0.85) contrast(1.1);
       }
       .hero::after{
         content:""; position:absolute; inset:0;
