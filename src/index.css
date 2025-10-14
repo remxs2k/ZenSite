@@ -15,10 +15,13 @@
 
 * {
   box-sizing: border-box; /* universal box-sizing */
+  overscroll-behavior-x: none;
 }
 
 body {
   margin: 0;
+  width: 100%;
+  position: relative;
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden; /* prevents horizontal scroll */
