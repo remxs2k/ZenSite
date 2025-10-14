@@ -38,7 +38,7 @@ function primaryWa(txt){ return isMobile()? WA.scheme(txt) : WA.web(txt); }
 
 const FLOOR_W=1000, FLOOR_H=600;
 const TABLES = [
-  { id:"t1", n:1, x:160, y:120, r:26, cap:6, tier:"VIP", zone:"VIP STAGE" },
+  { id:"t1", n:1, x:160, y:120, r:26, cap:6, tier:"VIP", zone:"VIP STAGE" }, 
   { id:"t2", n:2, x:300, y:120, r:26, cap:6, tier:"VIP", zone:"VIP STAGE" },
   { id:"t3", n:3, x:440, y:120, r:26, cap:6, tier:"VIP", zone:"VIP STAGE" },
   { id:"t4", n:4, x:580, y:120, r:26, cap:6, tier:"VIP", zone:"VIP STAGE" },

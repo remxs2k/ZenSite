@@ -332,7 +332,7 @@ function Highlights(){
 function Events(){
   const data = [
     //{time:"VINERI • 23:00", title:"House / Dance", desc:"Resident DJs • Club Anthems"},
-    {time:"SÂMBĂTĂ • 22:00", title:"Muie Club Night", desc:"Vericu & Dorel • Live Performances"},
+    {time:"SÂMBĂTĂ • 22:00", title:"Saturday Club Night", desc:"DJ • Live Performances"},
     //{time:"DUMINICĂ • 22:00", title:"Sunday Chill", desc:"R&B • Hip-Hop • Afrobeats"},
   ];
   return (
