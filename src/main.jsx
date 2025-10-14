@@ -14,3 +14,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </BrowserRouter>
   </React.StrictMode>
 );
+
+// Prevent zooming on mobile (iOS & Android)
+document.addEventListener('gesturestart', function (e) {
+  e.preventDefault();
+});
+
+document.addEventListener('dblclick', function (e) {
+  e.preventDefault();
+});
