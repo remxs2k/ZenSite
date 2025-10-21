@@ -185,7 +185,7 @@ function ScrollProgress(){
 }
 
 /** =================== PAGE =================== */
-export default function Home() {
+export default function App() {
   useReveal();
   const target = getNextSaturday2300();
   const { days, hrs, min, sec } = useCountdown(target);
