@@ -1,113 +1,74 @@
-html,
-body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-  touch-action: pan-y;
-  background: black;
-  color: white;
-  font-family: "Poppins", sans-serif;
-}
-
-/* Root container */
 #root {
   width: 100%;
-  overflow-x: hidden;
-  text-align: center;
-}
-
-/* Main content */
-.main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem;
-}
-
-/* Sections */
-.section {
-  width: 100%;
-  padding: 4rem 1rem;
-  opacity: 0;
-  transform: translateY(50px);
-  transition: all 0.8s ease-out;
-}
-.section.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.container {
-  max-width: 800px;
+  max-width: 1280px;
   margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  box-sizing: border-box; /* ensures padding doesn't overflow */
 }
 
-/* Typography */
-h1 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  text-shadow: 0 0 10px #0ff;
-}
-.intro {
-  font-size: 1.2rem;
-  margin-bottom: 2rem;
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  max-width: 100%; /* prevents overflow */
+  box-sizing: border-box;
+  will-change: filter;
+  transition: filter 300ms;
 }
 
-/* Button */
-.btn {
-  background: #0ff;
-  color: black;
-  padding: 0.8rem 1.6rem;
-  border-radius: 30px;
-  text-decoration: none;
-  font-weight: bold;
-  transition: background 0.3s ease;
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
 }
-.btn:hover {
-  background: #00bcd4;
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-/* Gallery */
-.gallery {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.gallery img {
-  width: 250px;
-  height: 250px;
-  object-fit: cover;
-  border-radius: 15px;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* Backgrounds */
-.noise,
-.bg-neon,
-.particles {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-}
-.noise {
-  background: repeating-radial-gradient(circle, #000 0, #111 1px, transparent 1px, transparent 4px);
-  opacity: 0.05;
-}
-.bg-neon {
-  background: radial-gradient(circle at center, rgba(0, 255, 255, 0.1), transparent 70%);
-  animation: pulse 5s infinite alternate;
-}
-@keyframes pulse {
-  0% { opacity: 0.4; }
-  100% { opacity: 0.8; }
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
 }
 
-/* Responsive tweaks */
+.card {
+  padding: 2em;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* Responsive tweaks for smaller screens */
 @media (max-width: 640px) {
-  h1 { font-size: 2rem; }
-  .intro { font-size: 1rem; }
-  .gallery img { width: 100%; height: auto; }
+  #root {
+    padding: 1rem;
+  }
+  .logo {
+    height: 4em;
+    padding: 1rem;
+  }
+  .card {
+    padding: 1rem;
+  }
+}
+
+html,
+body {
+  overflow-x: hidden; /* oprește scroll-ul orizontal */
+  width: 100%;
+  position: relative;
+}
+
+* {
+  box-sizing: border-box;
 }

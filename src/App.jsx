@@ -2,6 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
+// Base path for assets and routing when deployed under a subpath
+const BASE = import.meta.env.BASE_URL || "/";
+
 /** ================= BRAND ================= */
 const BRAND = {
   p: "#d946ef", // magenta neon
@@ -224,16 +227,19 @@ function Header(){
         <div className="row center">
           {/* LOGO: pune fisierul in /public/zenlogo.png */}
           <img
-            src="/zenlogo.png"
+            src={`${BASE}zenlogo.png`}
             alt="ZEN"
             className="logo-img"
             onError={(e)=>{ e.currentTarget.outerHTML='<div class="logo-dot"></div>'; }}
           />
           <strong className="brand">ZEN Lounge — Târgu-Mureș</strong>
         </div>
-        <nav className="nav desktop-only">
-          <Link className="btn-primary" to="/rezervari">Rezervă</Link>
-        </nav>
+          <nav className="nav hide-sm">
+            <a className="navlink hide-md" href="#events">Evenimente</a>
+            <a className="navlink hide-md" href="#gallery">Galerie</a>
+            <a className="navlink hide-md" href="#contact">Contact</a>
+            <a className="btn-primary" href="/rezervari">Rezervă</a>
+          </nav>
         <button className="btn-outline show-sm" onClick={()=>setOpen(!open)}>{open ? "Închide" : "Meniu"}</button>
       </div>
       {open && (
@@ -357,12 +363,12 @@ function Events(){
 function Gallery(){
   const [open, setOpen] = useState(null);
   const pics = [
-    "/galerie/zen2.jpg",
-    "/galerie/zen3.jpg",
-    "/galerie/zen4.jpg",
-    "/galerie/zen5.jpg",
-    "/galerie/zen6.jpg",
-    "/galerie/zen.jpg",
+    `${BASE}galerie/zen2.jpg`,
+    `${BASE}galerie/zen3.jpg`,
+    `${BASE}galerie/zen4.jpg`,
+    `${BASE}galerie/zen5.jpg`,
+    `${BASE}galerie/zen6.jpg`,
+    `${BASE}galerie/zen.jpg`,
   ];
   useEffect(()=>{
     function onKey(e){ if(e.key==="Escape") setOpen(null); if(open!==null && (e.key==="ArrowRight"||e.key==="ArrowLeft")) {
@@ -576,7 +582,7 @@ function GlobalStyles(){
         bottom: 0;
         background-image: 
           linear-gradient(180deg, rgba(7,8,12,0.55), rgba(7,8,12,0.85)),
-          url("/galerie/zen7.jpeg");
+          url("${BASE}galerie/zen7.jpeg");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -677,7 +683,7 @@ function GlobalStyles(){
 
       /* ===== FUNDAL GLOBAL NEON ===== */
       .bg-neon{
-        position:fixed; inset:0; z-index:-1; pointer-events:none;
+        position:fixed; inset:0; z-index:-2; pointer-events:none;
         background:
           radial-gradient(900px 500px at 15% 15%, rgba(168,85,247,.18), transparent 60%),
           radial-gradient(900px 500px at 85% 25%, rgba(217,70,239,.16), transparent 60%),
@@ -692,12 +698,12 @@ function GlobalStyles(){
         width: 100%;
         height: 100%;
         pointer-events: none;
-        opacity: .6;     /* fă .75 dacă vrei și mai vizibile */
-        z-index: 2;      /* peste bg-neon, sub conținut (header are 60, lightbox 70) */
+        opacity: .6;
+        z-index: -1;     /* under content, above bg-neon */
       }
 
       /* Reveal on scroll */
-      [data-reveal]{opacity:0;transform:translateY(16px);transition:opacity .6s ease, transform .6s ease}
+      [data-reveal]{opacity:1;transform:none;transition:opacity .6s ease, transform .6s ease}
       .reveal-in{opacity:1;transform:translateY(0)}
 
       @media (max-width: 900px){
