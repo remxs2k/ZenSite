@@ -1,5 +1,7 @@
 "use client"; 
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+
 /** ================= BRAND ================= */
 const BRAND = {
   p: "#d946ef", // magenta neon
