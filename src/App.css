@@ -1,21 +1,16 @@
 #root {
-  width: 100%;
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-  box-sizing: border-box; /* ensures padding doesn't overflow */
 }
 
 .logo {
   height: 6em;
   padding: 1.5em;
-  max-width: 100%; /* prevents overflow */
-  box-sizing: border-box;
   will-change: filter;
   transition: filter 300ms;
 }
-
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
@@ -40,35 +35,8 @@
 
 .card {
   padding: 2em;
-  max-width: 100%;
-  box-sizing: border-box;
 }
 
 .read-the-docs {
   color: #888;
-}
-
-/* Responsive tweaks for smaller screens */
-@media (max-width: 640px) {
-  #root {
-    padding: 1rem;
-  }
-  .logo {
-    height: 4em;
-    padding: 1rem;
-  }
-  .card {
-    padding: 1rem;
-  }
-}
-
-html,
-body {
-  overflow-x: hidden; /* oprește scroll-ul orizontal */
-  width: 100%;
-  position: relative;
-}
-
-* {
-  box-sizing: border-box;
 }
