@@ -231,9 +231,9 @@ function Header(){
           <strong className="brand">ZEN Lounge — Târgu-Mureș</strong>
         </div>
         <nav className="nav hide-sm">
-          <a className="navlink hide-md" href="#events">Evenimente</a>
-          <a className="navlink hide-md" href="#gallery">Galerie</a>
-          <a className="navlink hide-md" href="#contact">Contact</a>
+          <a className="navlink" href="#events">Evenimente</a>
+          <a className="navlink" href="#gallery">Galerie</a>
+          <a className="navlink" href="#contact">Contact</a>
           <Link className="btn-primary" to="/rezervari">Rezervă</Link>
         </nav>
         <button className="btn-outline show-sm" onClick={()=>setOpen(!open)}>{open ? "Închide" : "Meniu"}</button>
@@ -579,7 +579,7 @@ function GlobalStyles(){
         right: 0;
         bottom: 0;
         background-image: 
-          linear-gradient(180deg, rgba(7,8,12,0.55), rgba(7,8,12,0.85)),
+          linear-gradient(180deg, rgba(7,8,12,0.55), rgba(7,8,1J2,0.85)),
           url("/galerie/zen7.jpeg");
         background-size: cover;
         background-position: center;
@@ -708,7 +708,6 @@ function GlobalStyles(){
         .grid-3{grid-template-columns:1fr 1fr}
         .grid-2{grid-template-columns:1fr}
         .title{font-size:44px}
-        .hide-md{display:none}
       }
       @media (max-width: 640px){
         .grid-3{grid-template-columns:1fr}
