@@ -635,10 +635,18 @@ function GlobalStyles(){
       .particles{position:absolute;inset:0;width:100%;height:100%;opacity:.5;pointer-events:none}
 
       /* ===== COUNTDOWN ===== */
-      .countdown{border-bottom:1px solid #1f2937;background:#0b0b0b}
+      .countdown{border-bottom:1px solid #1f2937;background:#0b0b0b; overflow:hidden}
       .timer{display:flex;gap:10px;align-items:center}
       .tblock{display:inline-flex;align-items:center;gap:6px;background:#0f172a;border:1px solid #1f2937;border-radius:10px;padding:6px 10px}
       .tblock b{font-size:16px} .tblock i{font-style:normal;color:#94a3b8}
+      .countdown .container.row{flex-wrap:wrap; gap:10px}
+
+      @media (max-width: 640px){
+        .countdown .container.row{flex-direction:column; align-items:flex-start}
+        .timer{flex-wrap:wrap; gap:8px}
+        .tblock{padding:4px 8px}
+        .tblock b{font-size:14px}
+      }
 
       /* ===== MARQUEE ===== */
       .marquee{border-bottom:1px solid #1f2937;background:linear-gradient(90deg, rgba(217,70,239,.12), rgba(168,85,247,.12))}
