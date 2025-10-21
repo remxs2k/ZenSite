@@ -229,11 +229,8 @@ function Header(){
           />
           <strong className="brand">ZEN Lounge — Târgu-Mureș</strong>
         </div>
-        <nav className="nav hide-sm">
-          <a className="navlink hide-md" href="#events">Evenimente</a>
-          <a className="navlink hide-md" href="#gallery">Galerie</a>
-          <a className="navlink hide-md" href="#contact">Contact</a>
-          <a className="btn-primary" href="/rezervari">Rezervă</a>
+        <nav className="nav desktop-only">
+          <Link className="btn-primary" to="/rezervari">Rezervă</Link>
         </nav>
         <button className="btn-outline show-sm" onClick={()=>setOpen(!open)}>{open ? "Închide" : "Meniu"}</button>
       </div>
@@ -712,6 +709,20 @@ function GlobalStyles(){
         .hide-sm{display:none}
         .show-sm{display:block}
       }
+      
+      @media (max-width: 900px) {
+        .desktop-only {
+          display: none !important;
+        }
+      }
+
+      /* Keep Rezervă and Meniu aligned nicely */
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+        
     `}</style>
   );
 }
