@@ -560,7 +560,7 @@ function GlobalStyles(){
       .header .container { padding-top: 10px; padding-bottom: 10px; }
       .header .container.row { gap: 24px; }
       .header .row.center { gap: 16px; }
-      .nav { display:flex !important; align-items:center; gap: 28px; }
+      .nav { display:flex; align-items:center; gap: 28px; }
       .btn-primary.hide-sm { margin-left: 12px; }
 
       /* ===== SCROLL BAR TOP ===== */
