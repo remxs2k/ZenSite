@@ -1,6 +1,5 @@
 "use client"; 
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 /** ================= BRAND ================= */
 const BRAND = {
   p: "#d946ef", // magenta neon
@@ -185,7 +184,7 @@ function ScrollProgress(){
 }
 
 /** =================== PAGE =================== */
-export default function App() {
+export default function Home() {
   useReveal();
   const target = getNextSaturday2300();
   const { days, hrs, min, sec } = useCountdown(target);
@@ -231,10 +230,10 @@ function Header(){
           <strong className="brand">ZEN Lounge — Târgu-Mureș</strong>
         </div>
         <nav className="nav hide-sm">
-          <a className="navlink" href="#events">Evenimente</a>
-          <a className="navlink" href="#gallery">Galerie</a>
-          <a className="navlink" href="#contact">Contact</a>
-          <Link className="btn-primary" to="/rezervari">Rezervă</Link>
+          <a className="navlink hide-md" href="#events">Evenimente</a>
+          <a className="navlink hide-md" href="#gallery">Galerie</a>
+          <a className="navlink hide-md" href="#contact">Contact</a>
+          <a className="btn-primary" href="/rezervari">Rezervă</a>
         </nav>
         <button className="btn-outline show-sm" onClick={()=>setOpen(!open)}>{open ? "Închide" : "Meniu"}</button>
       </div>
@@ -243,7 +242,7 @@ function Header(){
           <a className="navlink" href="#events" onClick={()=>setOpen(false)}>Evenimente</a>
           <a className="navlink" href="#gallery" onClick={()=>setOpen(false)}>Galerie</a>
           <a className="navlink" href="#contact" onClick={()=>setOpen(false)}>Contact</a>
-          <Link className="btn-primary" to="/rezervari">Rezervă</Link>
+          <a className="btn-primary" href="/rezervari">Rezervă</a>
         </div>
       )}
     </header>
@@ -263,7 +262,7 @@ function Hero(){
         </p>
 
         <div className="row hero-actions" data-reveal>
-          <Link className="btn-primary" to="/rezervari">Rezervă</Link>
+          <a className="btn-primary" href="/rezervari">Rezervă</a>
           <a className="btn-ghost" href="#events">Vezi evenimente</a>
         </div>
         <div className="hero-badges" data-reveal>
@@ -331,16 +330,14 @@ function Highlights(){
 
 function Events(){
   const data = [
-    //{time:"VINERI • 23:00", title:"House / Dance", desc:"Resident DJs • Club Anthems"},
     {time:"SÂMBĂTĂ • 22:00", title:"Saturday Club Night", desc:"DJ • Live Performances"},
-    //{time:"DUMINICĂ • 22:00", title:"Sunday Chill", desc:"R&B • Hip-Hop • Afrobeats"},
   ];
   return (
     <section id="events" className="section">
       <div className="container">
         <div className="row between center" style={{marginBottom:16}}>
           <h2 className="h2" data-reveal>Evenimente</h2>
-          <Link className="btn-primary" to="/rezervari">Rezervă</Link>
+          <a className="btn-outline" href="/rezervari">Rezervă o masă</a>
         </div>
         <div className="grid-3">
           {data.map((e,i)=>(
@@ -349,7 +346,7 @@ function Events(){
               <div className="event-time">{e.time}</div>
               <h3 className="h3" style={{marginTop:6}}>{e.title}</h3>
               <p className="muted">{e.desc}</p>
-              <Link className="btn-primary" to="/rezervari">Rezervă</Link>
+              <a className="btn-chip" href="/rezervari">Rezervă aici</a>
             </div>
           ))}
         </div>
@@ -463,7 +460,7 @@ function Contact(){
             <div><strong>Email:</strong> <a className="navlink" href="mailto:booking@zenclub.ro">booking@zenclub.ro</a></div>
           </div>
           <div className="row" style={{ marginTop:12 }}>
-            <Link className="btn-primary" to="/rezervari">Rezervă</Link>
+            <a className="btn-chip" href="/rezervari">Rezervă</a>
             <a className="btn-chip" href="#" target="_blank" rel="noreferrer">Instagram</a>
           </div>
         </div>
@@ -480,7 +477,7 @@ function BottomCTA(){
     <div className="bottomcta">
       <div className="container row between center">
         <span>Pregătit pentru seara ta la ZEN?</span>
-        <Link className="btn-primary" to="/rezervari">Rezervă</Link>
+        <a className="btn-primary" href="/rezervari">Rezervă</a>
       </div>
     </div>
   );
@@ -508,7 +505,7 @@ function BgNeon(){ return <div className="bg-neon" aria-hidden />; }
 /** ================== STYLES ================== */
 function GlobalStyles(){
   return (
-    <style jsx global>{`
+    <style>{`
       :root{
         --p:${BRAND.p}; --s:${BRAND.s}; --a:${BRAND.a}; --bg:${BRAND.bg}; --fg:${BRAND.fg};
       }
@@ -579,7 +576,7 @@ function GlobalStyles(){
         right: 0;
         bottom: 0;
         background-image: 
-          linear-gradient(180deg, rgba(7,8,12,0.55), rgba(7,8,1J2,0.85)),
+          linear-gradient(180deg, rgba(7,8,12,0.55), rgba(7,8,12,0.85)),
           url("/galerie/zen7.jpeg");
         background-size: cover;
         background-position: center;
@@ -708,6 +705,7 @@ function GlobalStyles(){
         .grid-3{grid-template-columns:1fr 1fr}
         .grid-2{grid-template-columns:1fr}
         .title{font-size:44px}
+        .hide-md{display:none}
       }
       @media (max-width: 640px){
         .grid-3{grid-template-columns:1fr}
