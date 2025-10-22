@@ -238,7 +238,7 @@ function Header(){
             <a className="navlink hide-md" href="#events">Evenimente</a>
             <a className="navlink hide-md" href="#gallery">Galerie</a>
             <a className="navlink hide-md" href="#contact">Contact</a>
-            <a className="btn-primary" href="/rezervari">Rezervă</a>
+            <Link className="btn-primary" to="/rezervari">Rezervă</Link>
           </nav>
         <button className="btn-outline show-sm" onClick={()=>setOpen(!open)}>{open ? "Închide" : "Meniu"}</button>
       </div>
@@ -247,7 +247,7 @@ function Header(){
           <a className="navlink" href="#events" onClick={()=>setOpen(false)}>Evenimente</a>
           <a className="navlink" href="#gallery" onClick={()=>setOpen(false)}>Galerie</a>
           <a className="navlink" href="#contact" onClick={()=>setOpen(false)}>Contact</a>
-          <a className="btn-primary" href="/rezervari">Rezervă</a>
+          <Link className="btn-primary" to="/rezervari" onClick={()=>setOpen(false)}>Rezervă</Link>
         </div>
       )}
     </header>
@@ -267,7 +267,7 @@ function Hero(){
         </p>
 
         <div className="row hero-actions" data-reveal>
-          <a className="btn-primary" href="/rezervari">Rezervă</a>
+          <Link className="btn-primary" to="/rezervari">Rezervă</Link>
           <a className="btn-ghost" href="#events">Vezi evenimente</a>
         </div>
         <div className="hero-badges" data-reveal>
@@ -342,7 +342,7 @@ function Events(){
       <div className="container">
         <div className="row between center" style={{marginBottom:16}}>
           <h2 className="h2" data-reveal>Evenimente</h2>
-          <a className="btn-outline" href="/rezervari">Rezervă o masă</a>
+          <Link className="btn-outline" to="/rezervari">Rezervă o masă</Link>
         </div>
         <div className="grid-3">
           {data.map((e,i)=>(
@@ -351,7 +351,7 @@ function Events(){
               <div className="event-time">{e.time}</div>
               <h3 className="h3" style={{marginTop:6}}>{e.title}</h3>
               <p className="muted">{e.desc}</p>
-              <a className="btn-chip" href="/rezervari">Rezervă aici</a>
+              <Link className="btn-chip" to="/rezervari">Rezervă aici</Link>
             </div>
           ))}
         </div>
@@ -465,7 +465,7 @@ function Contact(){
             <div><strong>Email:</strong> <a className="navlink" href="mailto:booking@zenclub.ro">booking@zenclub.ro</a></div>
           </div>
           <div className="row" style={{ marginTop:12 }}>
-            <a className="btn-chip" href="/rezervari">Rezervă</a>
+            <Link className="btn-chip" to="/rezervari">Rezervă</Link>
             <a className="btn-chip" href="#" target="_blank" rel="noreferrer">Instagram</a>
           </div>
         </div>
@@ -482,7 +482,7 @@ function BottomCTA(){
     <div className="bottomcta">
       <div className="container row between center">
         <span>Pregătit pentru seara ta la ZEN?</span>
-        <a className="btn-primary" href="/rezervari">Rezervă</a>
+        <Link className="btn-primary" to="/rezervari">Rezervă</Link>
       </div>
     </div>
   );

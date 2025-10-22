@@ -186,7 +186,7 @@ function Header({darkMode, setDarkMode}){
           >
             {darkMode ? '☀️' : '🌙'}
           </button>
-          <a className="navlink" href="/">Acasă</a>
+          <Link className="navlink" to="/">Acasă</Link>
         </nav>
       </div>
     </header>
