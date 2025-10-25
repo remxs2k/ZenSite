@@ -515,7 +515,7 @@ function Contact(){
           </div>
           <div className="row" style={{ marginTop:12 }}>
             <Link className="btn-chip" to="/rezervari">Rezervă</Link>
-            <a className="btn-chip" href="#" target="_blank" rel="noreferrer">Instagram</a>
+            <a className="btn-chip" href="https://www.instagram.com/zen_lounge_club/#" target="_blank" rel="noreferrer">Instagram</a>
           </div>
         </div>
         <div data-reveal>
