@@ -468,18 +468,26 @@ function GMap({ lat, lng, query, zoom = 16 }){
   const qStr = query || envQ || fallbackPlace;
   const encQ = encodeURIComponent(qStr || "Târgu-Mureș, România");
 
+  // Prefer place/plus-code embed to avoid showing raw coordinates in UI.
+  const preferPlace = !!(qStr);
   const loc = hasCoords ? `${useLat},${useLng}` : null;
-  const src = hasCoords
-    ? `https://www.google.com/maps?q=loc:${encodeURIComponent(loc)}&z=${zoom}&hl=ro&output=embed`
-    : `https://www.google.com/maps?q=${encQ}&z=${zoom}&hl=ro&output=embed`;
+  const src = preferPlace
+    ? `https://www.google.com/maps?q=${encQ}&z=${zoom}&hl=ro&output=embed`
+    : (hasCoords
+        ? `https://www.google.com/maps?q=loc:${encodeURIComponent(loc)}&z=${zoom}&hl=ro&output=embed`
+        : `https://www.google.com/maps?q=${encQ}&z=${zoom}&hl=ro&output=embed`);
 
-  const viewLink = hasCoords
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`
-    : `https://www.google.com/maps/search/?api=1&query=${encQ}`;
+  const viewLink = preferPlace
+    ? `https://www.google.com/maps/search/?api=1&query=${encQ}`
+    : (hasCoords
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`
+        : `https://www.google.com/maps/search/?api=1&query=${encQ}`);
 
-  const directionsLink = hasCoords
-    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(loc)}`
-    : `https://www.google.com/maps/dir/?api=1&destination=${encQ}`;
+  const directionsLink = preferPlace
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encQ}`
+    : (hasCoords
+        ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(loc)}`
+        : `https://www.google.com/maps/dir/?api=1&destination=${encQ}`);
 
   return (
     <>
