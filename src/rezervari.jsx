@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 
 /***********
- * ZEN — Rezervări 2D (Enhanced v2)
+ * ZEN — Rezervări 2D (Enhanced v3)
+ * + Google Sheets Integration (Real-time)
  * + Prețuri pe categorii
  * + 3D Hover effects
- * + Live availability (mese blocate după rezervare)
+ * + Live availability
  ***********/
 
 /** BRAND */
@@ -15,6 +15,7 @@ const BRAND = { p: "#d946ef", s: "#22c55e", a: "#0ea5e9", bg: "#07080c", fg: "#f
 const CONFIG = {
   party: { open: "22:00", close: "05:00" },
   phoneE164: "40745093730",
+  webhookUrl: "https://script.google.com/macros/s/AKfycbyMCIGZKD-zKJWOs4WWhyhK7_O0HFF10VCVrv3CQkAQCoznsVByu6VAkv_DJOHPLbH6/exec",
   prices: {
     VIP: 500,
     PREMIUM: 300,
@@ -36,9 +37,36 @@ const WA = {
 function isMobile(){ if (typeof navigator==='undefined') return false; const ua=(navigator).userAgent||''; return /android|iphone|ipad|ipod/i.test(ua); }
 function primaryWa(txt){ return isMobile()? WA.scheme(txt) : WA.web(txt); }
 
+// API calls
+async function fetchBookedTables(date) {
+  try {
+    const response = await fetch(`${CONFIG.webhookUrl}?date=${date}`);
+    const data = await response.json();
+    return data.bookedTables || [];
+  } catch (error) {
+    console.error('Error fetching booked tables:', error);
+    return [];
+  }
+}
+
+async function saveReservation(reservation) {
+  try {
+    const response = await fetch(CONFIG.webhookUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reservation)
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving reservation:', error);
+    return { success: false, error };
+  }
+}
+
 const FLOOR_W=1000, FLOOR_H=600;
 const TABLES = [
-  { id:"t1", n:1, x:160, y:120, r:26, cap:6, tier:"VIP", zone:"VIP STAGE" }, 
+  { id:"t1", n:1, x:160, y:120, r:26, cap:6, tier:"VIP", zone:"VIP STAGE" },
   { id:"t2", n:2, x:300, y:120, r:26, cap:6, tier:"VIP", zone:"VIP STAGE" },
   { id:"t3", n:3, x:440, y:120, r:26, cap:6, tier:"VIP", zone:"VIP STAGE" },
   { id:"t4", n:4, x:580, y:120, r:26, cap:6, tier:"VIP", zone:"VIP STAGE" },
@@ -69,11 +97,23 @@ export default function Rezervari(){
   const [filter, setFilter] = useState("ALL");
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
-  const [bookedTables, setBookedTables] = useState({});
+  const [bookedTables, setBookedTables] = useState([]);
+  const [loadingTables, setLoadingTables] = useState(false);
   
   const selTable = TABLES.find(t=>t.id===selected) || null;
   const capacityOK = selTable ? guests <= selTable.cap : false;
-  const isTableBooked = selTable ? bookedTables[`${date}-${selTable.id}`] : false;
+  const isTableBooked = selTable ? bookedTables.includes(selTable.id) : false;
+
+  // Fetch booked tables when date changes
+  useEffect(()=>{
+    async function loadBookedTables() {
+      setLoadingTables(true);
+      const booked = await fetchBookedTables(date);
+      setBookedTables(booked);
+      setLoadingTables(false);
+    }
+    loadBookedTables();
+  }, [date]);
 
   useEffect(()=>{ if(selTable && guests>selTable.cap) setGuests(selTable.cap); }, [selected]);
 
@@ -99,19 +139,30 @@ export default function Rezervari(){
     return !!(selTable && isSaturday(date) && capacityOK && !isTableBooked && name.trim().length>=2 && /^\+?\d{9,15}$/.test(phone.replace(/\s|-/g,'')));
   }
   
-  function onWhatsApp(e){ 
+  async function onWhatsApp(e){ 
     e.preventDefault();
     if(!canSubmit()) return;
     
     setLoading(true);
     
+    // Save to Google Sheets first
+    const reservation = {
+      date: date,
+      tableId: selTable.id,
+      tableNumber: selTable.n,
+      name: name.trim(),
+      phone: phone.trim(),
+      guests: guests,
+      note: note.trim()
+    };
+    
+    await saveReservation(reservation);
+    
+    // Update local state
+    setBookedTables(prev => [...prev, selTable.id]);
+    
+    // Open WhatsApp
     setTimeout(() => {
-      // Blochează masa
-      setBookedTables(prev => ({
-        ...prev,
-        [`${date}-${selTable.id}`]: true
-      }));
-      
       const waUrl = primaryWa(waText);
       const opened = window.open(waUrl, '_blank');
       
@@ -137,8 +188,15 @@ export default function Rezervari(){
       <div className="container layout">
         <div className="left">
           <Controls date={date} setDate={setDate} filter={filter} setFilter={setFilter} />
-          <Floor tables={TABLES} selectedId={selected} onSelect={setSelected} filter={filter} 
-                 bookedTables={bookedTables} currentDate={date} />
+          {loadingTables ? (
+            <div className="card floor loading-state">
+              <div className="spinner-large"></div>
+              <p>Se încarcă mesele disponibile...</p>
+            </div>
+          ) : (
+            <Floor tables={TABLES} selectedId={selected} onSelect={setSelected} filter={filter} 
+                   bookedTables={bookedTables} />
+          )}
           <Legend />
         </div>
         <div className="right">
@@ -154,7 +212,7 @@ export default function Rezervari(){
               {loading ? (
                 <span className="btn-content">
                   <span className="spinner"></span>
-                  Se procesează...
+                  Se salvează rezervarea...
                 </span>
               ) : (
                 'Finalizează pe WhatsApp'
@@ -186,7 +244,7 @@ function Header({darkMode, setDarkMode}){
           >
             {darkMode ? '☀️' : '🌙'}
           </button>
-          <Link className="navlink" to="/">Acasă</Link>
+          <a className="navlink" href="/">Acasă</a>
         </nav>
       </div>
     </header>
@@ -225,7 +283,7 @@ function Controls({date,setDate,filter,setFilter}){
   );
 }
 
-function Floor({tables,selectedId,onSelect,filter,bookedTables,currentDate}){
+function Floor({tables,selectedId,onSelect,filter,bookedTables}){
   const svgRef = useRef(null); 
   usePanZoom(svgRef);
   
@@ -240,7 +298,7 @@ function Floor({tables,selectedId,onSelect,filter,bookedTables,currentDate}){
         <text x={440} y={320} textAnchor="middle" className="label">MAIN FLOOR</text>
         {tables.filter(t=> filter==="ALL" || t.tier===filter).map(t=>{
           const isSel = selectedId===t.id;
-          const isBooked = bookedTables[`${currentDate}-${t.id}`];
+          const isBooked = bookedTables.includes(t.id);
           return (
             <g 
               key={t.id} 
@@ -425,6 +483,23 @@ function GlobalStyles({darkMode}){
       .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:16px;position:relative;box-shadow:0 2px 8px rgba(0,0,0,${darkMode ? '0.3' : '0.05'});transition:all 0.3s}
       .card:hover{box-shadow:0 4px 16px rgba(0,0,0,${darkMode ? '0.4' : '0.1'})}
       
+      .loading-state{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        min-height:520px;
+        gap:16px;
+      }
+      .spinner-large{
+        width:48px;
+        height:48px;
+        border:4px solid var(--input-border);
+        border-top-color:var(--p);
+        border-radius:50%;
+        animation:spin 0.8s linear infinite;
+      }
+      
       .btn-primary{
         background:var(--s);
         color:#06281f;
@@ -497,7 +572,6 @@ function GlobalStyles({darkMode}){
       .dance{fill:${darkMode ? 'rgba(14,165,233,.06)' : 'rgba(14,165,233,.08)'};stroke:${darkMode ? '#1f2937' : '#cbd5e1'};stroke-width:2}
       .label{fill:var(--label);font-size:14px;font-weight:700;letter-spacing:.06em}
       
-      /* 3D Hover Effect */
       .table{
         cursor:pointer;
         transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -529,7 +603,6 @@ function GlobalStyles({darkMode}){
       .table.sel .disc{fill:${darkMode ? '#0b1325' : '#dbeafe'};stroke:#60a5fa;transform:scale(1.15);transform-origin:center}
       .table.sel .halo{filter:drop-shadow(0 0 24px #60a5fa);stroke-width:4}
       
-      /* Booked Tables */
       .table.booked{
         opacity:0.4;
         cursor:not-allowed !important;
