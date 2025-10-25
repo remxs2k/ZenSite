@@ -193,11 +193,13 @@ export default function Home() {
   useReveal();
   const target = getNextSaturday2300();
   const { days, hrs, min, sec } = useCountdown(target);
+  const prefersReduced = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isMobile = typeof window !== 'undefined' && (window.innerWidth || 0) < 768;
 
   return (
     <div className="page">
       <BgNeon />
-      <ParticlesFull />   {/* particule mov pe toată pagina */}
+      {(!prefersReduced && !isMobile) && <ParticlesFull />}   {/* skip heavy particles on mobile / reduced motion */}
       <Noise />
       <Header />
       <ScrollProgress />
@@ -577,7 +579,7 @@ function GlobalStyles(){
       .muted{color:#cbd5e1}
       .h2{font-size:28px;line-height:1.25;margin:0 0 16px;font-weight:800}
       .h3{font-size:18px;margin:0 0 8px;font-weight:700}
-      .section{padding:56px 0}
+      .section{padding:56px 0; scroll-margin-top:72px}
       .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
       .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 
@@ -726,7 +728,7 @@ function GlobalStyles(){
 
       /* ===== FAQ / CONTACT / MAP ===== */
       .faq{background:#0b0b0b;border:1px solid #1f2937;border-radius:12px;padding:14px;cursor:pointer}
-      .map{border-radius:12px;overflow:hidden;border:1px solid #1f2937;height:260px;background:#0b0b0b;display:grid;place-items:center;color:#94a3b8}
+      .map{border-radius:12px;overflow:hidden;border:1px solid #1f2937;height:280px;background:#0b0b0b;display:grid;place-items:center;color:#94a3b8}
 
       /* ===== BOTTOM & FOOTER ===== */
       .bottomcta{position:sticky;bottom:0;z-index:55;background:rgba(7,8,12,.9);backdrop-filter:blur(8px);border-top:1px solid #1f2937;padding:10px 0}
@@ -771,8 +773,11 @@ function GlobalStyles(){
         .grid-3{grid-template-columns:1fr}
         .hide-sm{display:none}
         .show-sm{display:block}
+        .section{padding:36px 0}
+        .h2{font-size:22px}
+        .map{height:320px}
       }
-      
+
       @media (max-width: 900px) {
         .desktop-only {
           display: none !important;
