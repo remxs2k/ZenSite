@@ -15,23 +15,28 @@ const BRAND = { p: "#d946ef", s: "#22c55e", a: "#0ea5e9", bg: "#07080c", fg: "#f
 const CONFIG = {
   party: { open: "22:00", close: "05:00" },
   phoneE164: "40745093730",
-  webhookUrl: "https://script.google.com/macros/s/AKfycbyMCIGZKD-zKJWOs4WWhyhK7_O0HFF10VCVrv3CQkAQCoznsVByu6VAkv_DJOHPLbH6/exec",
+  // Route all API calls through a single path; dev proxy and Vercel rewrites handle target
+  webhookUrl: "/gsheets",
   prices: {
     VIP: 500,
     PREMIUM: 300,
     STANDARD: 200
-  }
+  },
+  allowedWeekdays: [0, 6] // 0 = Duminica ... 6 = Sambata
 };
 
 /** UTILS */
 function todayPlusDaysISO(d = 0) { const x = new Date(); x.setHours(0,0,0,0); x.setDate(x.getDate()+d); return x.toISOString().slice(0,10); }
 function weekdayISO(date){return new Date(date+"T00:00:00").getDay(); }
-function isSaturday(dateISO){ return weekdayISO(dateISO)===6; }
-function nextSaturdayISO(){ const d=new Date(); const diff=((6-d.getDay()+7)%7)||7; d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
+function getAllowedWeekdays(){ const arr=Array.isArray(CONFIG.allowedWeekdays)&&CONFIG.allowedWeekdays.length?CONFIG.allowedWeekdays:[6]; return arr.map(n=>((n%7)+7)%7); }
+function isAllowedDay(dateISO){ return getAllowedWeekdays().includes(weekdayISO(dateISO)); }
+function nextAllowedDateISO(){ for(let i=0;i<21;i++){ const iso=todayPlusDaysISO(i); if(isAllowedDay(iso)) return iso; } return todayPlusDaysISO(0); }
+const DAY_NAMES = ['Duminica','Luni','Marti','Miercuri','Joi','Vineri','Sambata'];
+function formatAllowedDays(days){ const normalized = (Array.isArray(days)&&days.length?days:getAllowedWeekdays()).map(n=>DAY_NAMES[((n%7)+7)%7]); if(!normalized.length) return 'zilele disponibile'; if(normalized.length===1) return normalized[0]; return normalized.slice(0,-1).join(', ')+' si '+normalized.slice(-1); }
 function fmtDate(iso){ const d=new Date(iso+"T00:00:00"); try{ const s=d.toLocaleDateString('ro-RO',{weekday:'long',day:'2-digit',month:'long'}); return s.replace(/^./,c=>c.toUpperCase()); }catch{ return iso; } }
 
 const WA = {
-  web: (txt)=>`https://api.whatsapp.com/send?phone=${CONFIG.phoneE164}&text=${txt}`,
+  web: (txt)=>`https://web.whatsapp.com/send?phone=${CONFIG.phoneE164}&text=${txt}`,
   scheme: (txt)=>`whatsapp://send?phone=${CONFIG.phoneE164}&text=${txt}`,
 };
 function isMobile(){ if (typeof navigator==='undefined') return false; const ua=(navigator).userAgent||''; return /android|iphone|ipad|ipod/i.test(ua); }
@@ -41,7 +46,15 @@ function primaryWa(txt){ return isMobile()? WA.scheme(txt) : WA.web(txt); }
 async function fetchBookedTables(date) {
   try {
     const response = await fetch(`${CONFIG.webhookUrl}?date=${date}`);
-    const data = await response.json();
+    // Some Apps Script deployments redirect; be tolerant to text payloads
+    let data;
+    const ct = response.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const txt = await response.text();
+      try { data = JSON.parse(txt); } catch { data = {}; }
+    }
     return data.bookedTables || [];
   } catch (error) {
     console.error('Error fetching booked tables:', error);
@@ -49,14 +62,55 @@ async function fetchBookedTables(date) {
   }
 }
 
+// Local fallback to avoid immediate double-book in other tabs before backend sync
+// Use short TTL so deletions in the sheet naturally become available again.
+const LKEY = 'zen_booked_slots_v2';
+const LOCAL_TTL_MS = 2 * 60 * 1000; // 2 minutes
+function readLocal(date){
+  try{
+    const now = Date.now();
+    const db = JSON.parse(localStorage.getItem(LKEY) || '{}');
+    const rec = (db && typeof db === 'object') ? (db[date] || {}) : {};
+    const out = [];
+    const nextRec = {};
+    for (const [tid, ts] of Object.entries(rec)){
+      const t = Number(ts)||0;
+      if (now - t <= LOCAL_TTL_MS){ out.push(String(tid)); nextRec[tid]=t; }
+    }
+    // purge expired
+    if (JSON.stringify(nextRec)!==JSON.stringify(rec)){
+      db[date] = nextRec;
+      localStorage.setItem(LKEY, JSON.stringify(db));
+    }
+    return out;
+  }catch{ return []; }
+}
+function writeLocal(date, tableId){
+  try{
+    const db = JSON.parse(localStorage.getItem(LKEY) || '{}');
+    if (!db || typeof db !== 'object') return;
+    const rec = (db[date] && typeof db[date]==='object') ? db[date] : {};
+    rec[String(tableId)] = Date.now();
+    db[date] = rec;
+    localStorage.setItem(LKEY, JSON.stringify(db));
+  }catch{}
+}
+
 async function saveReservation(reservation) {
   try {
-    const response = await fetch(CONFIG.webhookUrl, {
+    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+      const blob = new Blob([JSON.stringify(reservation)], { type: 'application/json' });
+      navigator.sendBeacon(CONFIG.webhookUrl, blob);
+      return { success: true };
+    }
+    // Fallback; keepalive avoids being killed on navigation
+    fetch(CONFIG.webhookUrl, {
       method: 'POST',
       mode: 'no-cors',
+      keepalive: true,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reservation)
-    });
+    }).catch(()=>{});
     return { success: true };
   } catch (error) {
     console.error('Error saving reservation:', error);
@@ -88,7 +142,7 @@ const TABLES = [
 
 /** PAGE */
 export default function Rezervari(){
-  const [date, setDate] = useState(()=> nextSaturdayISO());
+  const [date, setDate] = useState(()=> nextAllowedDateISO());
   const [selected, setSelected] = useState(null);
   const [guests, setGuests] = useState(4);
   const [name, setName] = useState("");
@@ -96,6 +150,7 @@ export default function Rezervari(){
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState("ALL");
   const [loading, setLoading] = useState(false);
+  const [submitErr, setSubmitErr] = useState("");
   const [darkMode, setDarkMode] = useState(true);
   const [bookedTables, setBookedTables] = useState([]);
   const [loadingTables, setLoadingTables] = useState(false);
@@ -103,13 +158,20 @@ export default function Rezervari(){
   const selTable = TABLES.find(t=>t.id===selected) || null;
   const capacityOK = selTable ? guests <= selTable.cap : false;
   const isTableBooked = selTable ? bookedTables.includes(selTable.id) : false;
+  const sanitizedPhone = phone.replace(/\s|-/g,'');
+  const phoneValid = /^\+?\d{9,15}$/.test(sanitizedPhone);
+  const nameOk = name.trim().length >= 2;
+  const allowedDateOk = isAllowedDay(date);
+  const allowedDaysText = useMemo(()=>formatAllowedDays(CONFIG.allowedWeekdays), []);
 
   // Fetch booked tables when date changes
   useEffect(()=>{
     async function loadBookedTables() {
       setLoadingTables(true);
-      const booked = await fetchBookedTables(date);
-      setBookedTables(booked);
+      const remote = await fetchBookedTables(date);
+      const local = readLocal(date);
+      const merged = Array.from(new Set([...(remote||[]), ...(local||[])]));
+      setBookedTables(merged);
       setLoadingTables(false);
     }
     loadBookedTables();
@@ -135,51 +197,102 @@ export default function Rezervari(){
     return encodeURIComponent(rows.join('\n'));
   },[selTable,date,guests,name,phone,note]);
 
+  const disableReason = useMemo(()=>{
+    if(!selTable) return 'Selecteaza o masa disponibila din plan.';
+    if(isTableBooked) return 'Aceasta masa este deja rezervata pentru data selectata.';
+    if(!allowedDateOk) return `Rezervarile se fac doar ${allowedDaysText}.`;
+    if(!capacityOK) return `Masa aleasa accepta cel mult ${selTable.cap} persoane.`;
+    if(!nameOk) return 'Introdu numele complet (minim 2 caractere).';
+    if(!phoneValid) return 'Introdu un numar de telefon valid (ex: +40 712 345 678).';
+    return '';
+  },[selTable, isTableBooked, allowedDateOk, capacityOK, nameOk, phoneValid, allowedDaysText]);
+
   function canSubmit(){
-    return !!(selTable && isSaturday(date) && capacityOK && !isTableBooked && name.trim().length>=2 && /^\+?\d{9,15}$/.test(phone.replace(/\s|-/g,'')));
+    return !!(selTable && allowedDateOk && capacityOK && !isTableBooked && nameOk && phoneValid);
   }
   
   async function onWhatsApp(e){ 
     e.preventDefault();
     if(!canSubmit()) return;
-    
+    setSubmitErr("");
     setLoading(true);
-    
-    // Save to Google Sheets first
+
+    // Prepare payload for server-side locking
     const reservation = {
-      date: date,
+      date,
       tableId: selTable.id,
       tableNumber: selTable.n,
       name: name.trim(),
       phone: phone.trim(),
-      guests: guests,
+      guests,
       note: note.trim()
     };
-    
-    await saveReservation(reservation);
-    
-    // Update local state
-    setBookedTables(prev => [...prev, selTable.id]);
-    
-    // Open WhatsApp
-    setTimeout(() => {
+
+    // Preflight: re-check availability from server to avoid obvious double-book
+    const pre = await fetchBookedTables(date);
+    if (Array.isArray(pre) && pre.includes(selTable.id)) {
+      setSubmitErr('Masa este deja rezervată. Alege altă masă.');
+      setLoading(false);
+      return;
+    }
+
+    // Open a placeholder window on desktop to keep gesture, then navigate after success
+    let popup = null;
+    const isDeepLink = primaryWa(waText).startsWith('whatsapp://');
+    if (!isDeepLink) {
+      try { popup = window.open('', '_blank'); } catch {}
+    }
+
+    try {
+      // Await server confirmation to prevent double-booking
+      const res = await fetch(`${CONFIG.webhookUrl}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reservation)
+      });
+      const ct = res.headers.get('content-type') || '';
+      let data = null;
+      if (ct.includes('application/json')) data = await res.json();
+      else { try { data = JSON.parse(await res.text()); } catch { data = null; } }
+
+      if (!res.ok || !data || data.ok === false) {
+        const reason = (data && data.reason) || 'unknown';
+        // Refresh availability from server and show error
+        const remote = await fetchBookedTables(date);
+        const local = readLocal(date);
+        setBookedTables(Array.from(new Set([...(remote||[]), ...(local||[])])));
+        setSubmitErr(reason === 'already_booked' ? 'Masa a fost deja rezervată între timp. Alege altă masă.' : 'Nu s-a putut confirma rezervarea. Încearcă din nou.');
+        if (popup) { try { popup.close(); } catch {} }
+        setLoading(false);
+        return;
+      }
+
+      // Success: mark locally and navigate to WhatsApp
+      setBookedTables(prev => [...prev, selTable.id]);
+      writeLocal(date, selTable.id);
+
       const waUrl = primaryWa(waText);
-      const opened = window.open(waUrl, '_blank');
-      
-      if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+      if (isDeepLink) {
+        window.location.href = waUrl;
+      } else if (popup) {
+        try { popup.location.href = waUrl; } catch { window.location.href = waUrl; }
+      } else {
         window.location.href = waUrl;
       }
-      
-      setTimeout(() => {
-        setLoading(false);
-        // Reset form
-        setSelected(null);
-        setGuests(4);
-        setName("");
-        setPhone("");
-        setNote("");
-      }, 1000);
-    }, 500);
+
+      // Best-effort reset (may not run if navigating away)
+      setSelected(null);
+      setGuests(4);
+      setName("");
+      setPhone("");
+      setNote("");
+      setLoading(false);
+    } catch (err) {
+      // Network/other error
+      if (popup) { try { popup.close(); } catch {} }
+      setSubmitErr('Eroare de rețea. Verifică conexiunea și încearcă din nou.');
+      setLoading(false);
+    }
   }
 
   return (
@@ -187,7 +300,7 @@ export default function Rezervari(){
       <Header darkMode={darkMode} setDarkMode={setDarkMode} />
       <div className="container layout">
         <div className="left">
-          <Controls date={date} setDate={setDate} filter={filter} setFilter={setFilter} />
+          <Controls date={date} setDate={setDate} filter={filter} setFilter={setFilter} allowedDaysText={allowedDaysText} />
           {loadingTables ? (
             <div className="card floor loading-state">
               <div className="spinner-large"></div>
@@ -219,7 +332,11 @@ export default function Rezervari(){
               )}
             </button>
             {isTableBooked && <p className="error-msg">❌ Această masă este deja rezervată pentru data selectată</p>}
-            <p className="muted tiny">Rezervările se fac doar sâmbăta ({CONFIG.party.open}–{CONFIG.party.close}).</p>
+            {submitErr && <p className="error-msg">{submitErr}</p>}
+            {!canSubmit() && disableReason && !isTableBooked && (
+              <p className="warn cta-msg">{disableReason}</p>
+            )}
+            <p className="muted tiny">Rezervarile se fac doar {allowedDaysText} ({CONFIG.party.open}-{CONFIG.party.close}).</p>
           </div>
         </div>
       </div>
@@ -251,29 +368,31 @@ function Header({darkMode, setDarkMode}){
   );
 }
 
-function Controls({date,setDate,filter,setFilter}){
-  const days=7; const nextDays=[...Array(days)].map((_,i)=> todayPlusDaysISO(i));
+function Controls({date,setDate,filter,setFilter,allowedDaysText}){
+  const days = 10;
+  const nextDays = [...Array(days)].map((_,i)=> todayPlusDaysISO(i));
   return (
     <div className="card controls fade-in">
       <div className="row wrap">
         <div className="col">
           <label>Data</label>
           <select value={date} onChange={e=>setDate(e.target.value)}>
-            {nextDays.map(d=> (
-              <option key={d} value={d} disabled={!isSaturday(d)}>
-                {fmtDate(d)}{!isSaturday(d)?' • blocat':''}
+            {nextDays.map(d=>(
+              <option key={d} value={d} disabled={!isAllowedDay(d)}>
+                {fmtDate(d)}{!isAllowedDay(d)?" - indisponibil":""}
               </option>
             ))}
           </select>
+          <small className="muted tiny" style={{ marginTop:4 }}>Disponibil: {allowedDaysText}</small>
         </div>
         <div className="col">
           <label>Interval</label>
-          <div className="chiprow"><span className="chip on">Toată seara ({CONFIG.party.open}–{CONFIG.party.close})</span></div>
+          <div className="chiprow"><span className="chip on">Toata seara ({CONFIG.party.open}-{CONFIG.party.close})</span></div>
         </div>
         <div className="col">
           <label>Filtru</label>
           <div className="chiprow">
-            {["ALL","VIP","PREMIUM","STANDARD"].map(v=> (
+            {["ALL","VIP","PREMIUM","STANDARD"].map(v=>(
               <button key={v} className={`chip ${filter===v?'on':''}`} onClick={()=>setFilter(v)}>{v}</button>
             ))}
           </div>
@@ -413,7 +532,7 @@ function GlobalStyles({darkMode}){
   };
   
   return (
-    <style jsx global>{`
+    <style>{`
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
@@ -665,6 +784,7 @@ function GlobalStyles({darkMode}){
       .form input::placeholder,.form textarea::placeholder{color:${darkMode ? '#64748b' : '#94a3b8'}}
       .form textarea{min-height:96px;resize:vertical}
       .warn{color:#fbbf24;font-size:12px;margin:2px 0 0;animation:fadeIn 0.3s ease-out}
+      .cta-msg{text-align:center;margin-top:8px}
 
       .legend-wrap{display:flex;flex-direction:column;gap:12px}
       .legend{display:flex;gap:12px;padding:12px;flex-wrap:wrap}

@@ -3,6 +3,7 @@
     { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
   ],
   "rewrites": [
+    { "source": "/gsheets", "destination": "https://script.google.com/macros/s/AKfycbwXiKNkpLUuR4V7CHicx1_Jv8Cghs8oq1LlGQF3NfKQsyuApUdJ_ks1j5JjpWj10j4w/exec" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }
