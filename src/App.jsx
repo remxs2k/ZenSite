@@ -510,7 +510,7 @@ function Contact(){
           <h2 className="h2">Contact</h2>
           <div className="list">
             <div><strong>Adresă:</strong> Târgu-Mureș, România</div>
-            <div><strong>Telefon:</strong> <a className="navlink" href="tel:+40700000000">+40 700 000 000</a></div>
+            <div><strong>Telefon:</strong> <a className="navlink" href="tel:+40772112780">+40 700 000 000</a></div>
             <div><strong>Email:</strong> <a className="navlink" href="mailto:booking@zenclub.ro">booking@zenclub.ro</a></div>
           </div>
           <div className="row" style={{ marginTop:12 }}>
