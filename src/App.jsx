@@ -453,6 +453,53 @@ function FAQ(){
   );
 }
 
+function GMap({ lat, lng, query, zoom = 16 }){
+  const fallbackPlace = "ZEN Lounge Târgu Mureș";
+  const envLat = import.meta?.env?.VITE_MAP_LAT;
+  const envLng = import.meta?.env?.VITE_MAP_LNG;
+  const envQ = import.meta?.env?.VITE_MAP_PLACE || import.meta?.env?.VITE_MAP_QUERY;
+
+  const hasCoords = (lat && lng) || (envLat && envLng);
+  const useLat = lat ?? envLat;
+  const useLng = lng ?? envLng;
+
+  const qStr = query || envQ || fallbackPlace;
+  const encQ = encodeURIComponent(qStr || "Târgu-Mureș, România");
+
+  const loc = hasCoords ? `${useLat},${useLng}` : null;
+  const src = hasCoords
+    ? `https://www.google.com/maps?q=loc:${encodeURIComponent(loc)}&z=${zoom}&hl=ro&output=embed`
+    : `https://www.google.com/maps?q=${encQ}&z=${zoom}&hl=ro&output=embed`;
+
+  const viewLink = hasCoords
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`
+    : `https://www.google.com/maps/search/?api=1&query=${encQ}`;
+
+  const directionsLink = hasCoords
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(loc)}`
+    : `https://www.google.com/maps/dir/?api=1&destination=${encQ}`;
+
+  return (
+    <>
+      <div className="map">
+        <iframe
+          title="Harta Google"
+          src={src}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          style={{ border: 0, width: "100%", height: "100%" }}
+          allowFullScreen
+        />
+      </div>
+      <div className="row" style={{ marginTop: 8, gap: 12 }}>
+        <a className="navlink" href={viewLink} target="_blank" rel="noreferrer">Deschide în Google Maps</a>
+        <span className="muted">•</span>
+        <a className="navlink" href={directionsLink} target="_blank" rel="noreferrer">Direcții</a>
+      </div>
+    </>
+  );
+}
+
 function Contact(){
   return (
     <section id="contact" className="section">
@@ -470,7 +517,7 @@ function Contact(){
           </div>
         </div>
         <div data-reveal>
-          <div className="map">Harta Google (opțional)</div>
+          <GMap />
         </div>
       </div>
     </section>
