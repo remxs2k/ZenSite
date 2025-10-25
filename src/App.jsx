@@ -455,40 +455,10 @@ function FAQ(){
   );
 }
 
-function GMap({ lat, lng, query, zoom = 16 }){
-  const fallbackPlace = "ZEN Lounge Târgu Mureș";
-  const envLat = import.meta?.env?.VITE_MAP_LAT;
-  const envLng = import.meta?.env?.VITE_MAP_LNG;
-  const envQ = import.meta?.env?.VITE_MAP_PLACE || import.meta?.env?.VITE_MAP_QUERY;
-
-  const hasCoords = (lat && lng) || (envLat && envLng);
-  const useLat = lat ?? envLat;
-  const useLng = lng ?? envLng;
-
-  const qStr = query || envQ || fallbackPlace;
-  const encQ = encodeURIComponent(qStr || "Târgu-Mureș, România");
-
-  // Prefer place/plus-code embed to avoid showing raw coordinates in UI.
-  const preferPlace = !!(qStr);
-  const loc = hasCoords ? `${useLat},${useLng}` : null;
-  const src = preferPlace
-    ? `https://www.google.com/maps?q=${encQ}&z=${zoom}&hl=ro&output=embed`
-    : (hasCoords
-        ? `https://www.google.com/maps?q=loc:${encodeURIComponent(loc)}&z=${zoom}&hl=ro&output=embed`
-        : `https://www.google.com/maps?q=${encQ}&z=${zoom}&hl=ro&output=embed`);
-
-  const viewLink = preferPlace
-    ? `https://www.google.com/maps/search/?api=1&query=${encQ}`
-    : (hasCoords
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`
-        : `https://www.google.com/maps/search/?api=1&query=${encQ}`);
-
-  const directionsLink = preferPlace
-    ? `https://www.google.com/maps/dir/?api=1&destination=${encQ}`
-    : (hasCoords
-        ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(loc)}`
-        : `https://www.google.com/maps/dir/?api=1&destination=${encQ}`);
-
+function GMap({ query = "ZEN Lounge Târgu Mureș" }){
+  const q = encodeURIComponent(query || "Târgu-Mureș, România");
+  const src = `https://www.google.com/maps?q=${q}&z=15&hl=ro&output=embed`;
+  const link = `https://www.google.com/maps/search/?api=1&query=${q}`;
   return (
     <>
       <div className="map">
@@ -501,10 +471,8 @@ function GMap({ lat, lng, query, zoom = 16 }){
           allowFullScreen
         />
       </div>
-      <div className="row" style={{ marginTop: 8, gap: 12 }}>
-        <a className="navlink" href={viewLink} target="_blank" rel="noreferrer">Deschide în Google Maps</a>
-        <span className="muted">•</span>
-        <a className="navlink" href={directionsLink} target="_blank" rel="noreferrer">Direcții</a>
+      <div className="row" style={{ marginTop: 8 }}>
+        <a className="navlink" href={link} target="_blank" rel="noreferrer">Deschide în Google Maps</a>
       </div>
     </>
   );
@@ -736,7 +704,7 @@ function GlobalStyles(){
 
       /* ===== FAQ / CONTACT / MAP ===== */
       .faq{background:#0b0b0b;border:1px solid #1f2937;border-radius:12px;padding:14px;cursor:pointer}
-      .map{border-radius:12px;overflow:hidden;border:1px solid #1f2937;height:280px;background:#0b0b0b;display:grid;place-items:center;color:#94a3b8}
+      .map{border-radius:12px;overflow:hidden;border:1px solid #1f2937;height:260px;background:#0b0b0b;display:grid;place-items:center;color:#94a3b8}
 
       /* ===== BOTTOM & FOOTER ===== */
       .bottomcta{position:sticky;bottom:0;z-index:55;background:rgba(7,8,12,.9);backdrop-filter:blur(8px);border-top:1px solid #1f2937;padding:10px 0}
